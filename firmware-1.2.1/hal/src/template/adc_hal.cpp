@@ -40,6 +40,17 @@ int32_t HAL_ADC_Read(uint16_t pin)
 }
 
 /*
+ * @brief Read the analog value of a pin using internal voltage reference.
+ * Should return a 16-bit value, 0-65536 (0 = LOW, 65536 = HIGH)
+ * Note: ADC is 12-bit. Currently it returns 0-4096
+ */
+int32_t HAL_ADC_Read_Int(uint16_t pin)
+{
+    return 0;
+}
+
+
+/*
  * @brief Initialize the ADC peripheral.
  */
 void HAL_ADC_DMA_Init()

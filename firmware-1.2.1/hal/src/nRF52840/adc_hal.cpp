@@ -22,7 +22,7 @@
 
 static volatile bool m_adc_initiated = false;
 
-static const nrfx_saadc_config_t saadc_config = 
+static const nrfx_saadc_config_t saadc_config =
 {
     .resolution         = NRF_SAADC_RESOLUTION_12BIT,
     .oversample         = NRF_SAADC_OVERSAMPLE_DISABLED,
@@ -77,7 +77,7 @@ int32_t HAL_ADC_Read(uint16_t pin)
     }
 
      //Single ended, negative input to ADC shorted to GND.
-    nrf_saadc_channel_config_t channel_config = {                                                   
+    nrf_saadc_channel_config_t channel_config = {
         .resistor_p = NRF_SAADC_RESISTOR_DISABLED,      \
         .resistor_n = NRF_SAADC_RESISTOR_DISABLED,      \
         .gain       = NRF_SAADC_GAIN1_4,                \
@@ -116,6 +116,85 @@ err_ret:
     nrfx_saadc_channel_uninit(PIN_MAP[pin].adc_channel);
     return 0;
 }
+
+/*
+ * @brief Read the analog value of a pin using the internal reference voltage.
+ * Should return a 16-bit value, 0-65536 (0 = LOW, 65536 = HIGH)
+ * Note: ADC is 12-bit. Currently it returns 0-4096
+ */
+int32_t HAL_ADC_Read_Int(uint16_t pin)
+{
+    if (!m_adc_initiated)
+    {
+        m_adc_initiated = true;
+        HAL_ADC_DMA_Init();
+    }
+
+    int16_t    adc_value = 0;
+    ret_code_t ret_code;
+    nrf_saadc_input_t nrf_adc_channel;
+    NRF5x_Pin_Info *PIN_MAP = HAL_Pin_Map();
+
+    switch (PIN_MAP[pin].adc_channel)
+    {
+        case 0: nrf_adc_channel = NRF_SAADC_INPUT_AIN0; break;
+        case 1: nrf_adc_channel = NRF_SAADC_INPUT_AIN1; break;
+        case 2: nrf_adc_channel = NRF_SAADC_INPUT_AIN2; break;
+        case 3: nrf_adc_channel = NRF_SAADC_INPUT_AIN3; break;
+        case 4: nrf_adc_channel = NRF_SAADC_INPUT_AIN4; break;
+        case 5: nrf_adc_channel = NRF_SAADC_INPUT_AIN5; break;
+        case 6: nrf_adc_channel = NRF_SAADC_INPUT_AIN6; break;
+        case 7: nrf_adc_channel = NRF_SAADC_INPUT_AIN7; break;
+        default:
+            return 0;
+    }
+
+    if (PIN_MAP[pin].pin_func != PF_NONE && PIN_MAP[pin].pin_func != PF_DIO)
+    {
+        return 0;
+    }
+
+     //Single ended, negative input to ADC shorted to GND.
+    nrf_saadc_channel_config_t channel_config = {
+        .resistor_p = NRF_SAADC_RESISTOR_DISABLED,      \
+        .resistor_n = NRF_SAADC_RESISTOR_DISABLED,      \
+        .gain       = NRF_SAADC_GAIN1_4,                \
+        .reference  = NRF_SAADC_REFERENCE_INTERNAL,         \
+        .acq_time   = NRF_SAADC_ACQTIME_10US,           \
+        .mode       = NRF_SAADC_MODE_SINGLE_ENDED,      \
+        .burst      = NRF_SAADC_BURST_DISABLED,         \
+        .pin_p      = (nrf_saadc_input_t)(nrf_adc_channel),       \
+        .pin_n      = NRF_SAADC_INPUT_DISABLED          \
+    };
+
+    ret_code = nrfx_saadc_channel_init(PIN_MAP[pin].adc_channel, &channel_config);
+    if (ret_code)
+    {
+        goto err_ret;
+    }
+
+    ret_code = nrfx_saadc_sample_convert(PIN_MAP[pin].adc_channel, &adc_value);
+    if (ret_code)
+    {
+        goto err_ret;
+    }
+
+    if (adc_value < 0)
+    {
+        // Even in the single ended mode measured value can be negative value. Saturation for avoid casting to a big integer.
+        goto err_ret;
+    }
+    else
+    {
+        nrfx_saadc_channel_uninit(PIN_MAP[pin].adc_channel);
+        return (uint16_t) adc_value;
+    }
+
+err_ret:
+    nrfx_saadc_channel_uninit(PIN_MAP[pin].adc_channel);
+    return 0;
+}
+
 
 /*
  * @brief Initialize the ADC peripheral.

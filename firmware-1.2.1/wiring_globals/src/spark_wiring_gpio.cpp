@@ -179,6 +179,32 @@ int32_t analogRead(pin_t pin)
 }
 
 /*
+ * @brief Read the analog value of a pin using internal voltage reference.
+ * Should return a 16-bit value, 0-65536 (0 = LOW, 65536 = HIGH)
+ * Note: ADC is 12-bit. Currently it returns 0-4095
+ */
+int32_t analogRead_Internal(pin_t pin)
+{
+  // Allow people to use 0-7 to define analog pins by checking to see if the values are too low.
+  if(pin < FIRST_ANALOG_PIN)
+  {
+    pin = pin + FIRST_ANALOG_PIN;
+  }
+
+  // Safety check
+  if( !pinAvailable(pin) ) {
+    return LOW;
+  }
+
+  if(HAL_Validate_Pin_Function(pin, PF_ADC)!=PF_ADC)
+  {
+    return LOW;
+  }
+
+  return HAL_ADC_Read_Int(pin);
+}
+
+/*
  * @brief Should take an integer 0-255 and create a 500Hz PWM signal with a duty cycle from 0-100%.
  * On Photon, DAC1 and DAC2 act as true analog outputs(values: 0 to 4095) using onchip DAC peripheral
  */
@@ -251,7 +277,7 @@ uint8_t analogWriteResolution(pin_t pin, uint8_t value)
     HAL_PWM_Set_Resolution(pin, value);
     return HAL_PWM_Get_Resolution(pin);
   }
-  
+
 
   return 0;
 }
