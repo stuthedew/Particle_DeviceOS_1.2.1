@@ -43,6 +43,10 @@ void HAL_ADC_Set_Sample_Time(uint8_t ADC_SampleTime)
     // deprecated
 }
 
+/*
+ * @brief @brief Set the ADC reference to either VDD / 4 (VDD4) or the internal 0.6v (INTERNAL)
+ */
+
 void HAL_ADC_Set_VREF(vref_e v_e){
     switch (v_e) {
         case VDD4: VREF = NRF_SAADC_REFERENCE_VDD4; break;
