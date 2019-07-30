@@ -88,7 +88,7 @@ DYNALIB_FN(35, hal_gpio, HAL_Interrupts_Detach_Ext, void(uint16_t, uint8_t, void
 DYNALIB_FN(36, hal_gpio, HAL_Set_Direct_Interrupt_Handler, int(IRQn_Type irqn, HAL_Direct_Interrupt_Handler handler, uint32_t flags, void* reserved))
 
 //Custom Stuart Function
-DYNALIB_FN(37, hal_gpio, HAL_ADC_Read_Int, int32_t(uint16_t))
+DYNALIB_FN(37, hal_gpio, HAL_ADC_Set_VREF, void(vref_e))
 
 DYNALIB_END(hal_gpio)
 
